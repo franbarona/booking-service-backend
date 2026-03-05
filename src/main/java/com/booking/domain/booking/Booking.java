@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 import com.booking.domain.shared.AggregateRoot;
+import com.booking.domain.shared.EventPublisher;
 
 public class Booking extends AggregateRoot {
     private final BookingId bookingId;
@@ -13,6 +14,11 @@ public class Booking extends AggregateRoot {
     private final Price price;
 
     public Booking(String guestName, LocalDate checkIn, LocalDate checkOut, BigDecimal pricePerNight) {
+        this(guestName, checkIn, checkOut, pricePerNight, null);
+    }
+
+    public Booking(String guestName, LocalDate checkIn, LocalDate checkOut, BigDecimal pricePerNight,
+            EventPublisher publisher) {
         if (guestName == null || guestName.isBlank()) {
             throw new IllegalArgumentException("Guest name cannot be empty");
         }
@@ -20,7 +26,12 @@ public class Booking extends AggregateRoot {
         this.guestName = guestName;
         this.dateRange = new DateRange(checkIn, checkOut);
         this.price = new Price(checkIn, checkOut, pricePerNight);
-        addDomainEvent(new ReservationCreatedEvent(bookingId, guestName, checkIn, checkOut));
+        ReservationCreatedEvent reservationCreatedEvent = new ReservationCreatedEvent(bookingId, guestName, checkIn,
+                checkOut);
+        addDomainEvent(reservationCreatedEvent);
+        if (publisher != null) {
+            publisher.publish(reservationCreatedEvent);
+        }
     }
 
     public BookingId getBookingId() {

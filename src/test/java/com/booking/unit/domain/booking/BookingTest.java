@@ -12,7 +12,10 @@ import org.junit.jupiter.api.Test;
 
 import com.booking.domain.booking.Booking;
 import com.booking.domain.booking.ReservationCreatedEvent;
+import com.booking.domain.notification.NotificationService;
 import com.booking.domain.shared.DomainEvent;
+import com.booking.domain.shared.EventPublisher;
+import com.booking.infrastructure.messaging.InMemoryEventPublisher;
 
 public class BookingTest {
 
@@ -91,5 +94,24 @@ public class BookingTest {
 
         // Assert
         assertEquals(new BigDecimal("300.00"), booking.getTotalPrice());
+    }
+
+    @Test
+    void shouldPublishReservationCreatedEventWhenCreated() {
+        // Arrange
+        EventPublisher publisher = new InMemoryEventPublisher();
+        NotificationService notificationService = new NotificationService(publisher);
+
+        String guestName = "John Doe";
+        LocalDate checkIn = LocalDate.of(2027, 3, 10);
+        LocalDate checkOut = LocalDate.of(2027, 3, 13);
+        BigDecimal pricePerNight = new BigDecimal("100.0");
+
+        // Act
+        new Booking(guestName, checkIn, checkOut, pricePerNight, publisher);
+
+        // Assert
+        assertTrue(notificationService.wasNotified());
+        assertEquals(guestName, notificationService.getLastNotifiedGuest());
     }
 }
